@@ -30,21 +30,35 @@ public class VideoId
             return false;
         }
     }
-    
+
     private static string HashUrl(string url)
     {
-        return Convert.ToBase64String(
-            SHA256.HashData(
-                Encoding.UTF8.GetBytes(url)))
-            .Replace("/", "")
-            .Replace("+", "")
-            .Replace("=", "");
+        try
+        {
+            var uri = new Uri(url.Trim());
+            var normalizedUrl = uri.GetLeftPart(UriPartial.Path);
+            return Convert.ToBase64String(
+                    SHA256.HashData(
+                        Encoding.UTF8.GetBytes(normalizedUrl)))
+                .Replace("/", "")
+                .Replace("+", "")
+                .Replace("=", "");
+        }
+        catch
+        {
+            return Convert.ToBase64String(
+                    SHA256.HashData(
+                        Encoding.UTF8.GetBytes(url)))
+                .Replace("/", "")
+                .Replace("+", "")
+                .Replace("=", "");
+        }
     }
-    
+
     public static async Task<VideoInfo?> GetVideoId(string url, bool avPro)
     {
         url = url.Trim();
-        
+
         if (url.StartsWith("http://jd.pypy.moe/api/v1/videos/") ||
             url.StartsWith("https://jd.pypy.moe/api/v1/videos/"))
         {
@@ -75,7 +89,7 @@ public class VideoId
                 return null;
             }
         }
-        
+
         if (url.StartsWith("https://na2.vrdancing.club") ||
             url.StartsWith("https://eu2.vrdancing.club"))
         {
@@ -88,14 +102,14 @@ public class VideoId
                 DownloadFormat = DownloadFormat.MP4
             };
         }
-        
+
         if (IsYouTubeUrl(url))
         {
             var videoId = string.Empty;
             var match = YoutubeRegex.Match(url);
             if (match.Success)
             {
-                videoId = match.Groups[1].Value; 
+                videoId = match.Groups[1].Value;
             }
             else if (url.StartsWith("https://www.youtube.com/shorts/") ||
                      url.StartsWith("https://youtube.com/shorts/"))
@@ -166,20 +180,13 @@ public class VideoId
             throw new Exception("Failed to get video ID: Video is a stream");
         if (data.duration > ConfigManager.Config.CacheYouTubeMaxLength * 60)
             throw new Exception($"Failed to get video ID: Video is longer than configured max length ({data.duration / 60}/{ConfigManager.Config.CacheYouTubeMaxLength})");
-        
+
         return data.id;
     }
-
-    // High bitrate video (1080)
-    // https://www.youtube.com/watch?v=DzQwWlbnZvo
-
-    // 4k video
-    // https://www.youtube.com/watch?v=i1csLh-0L9E
 
     public static async Task<string> GetUrl(VideoInfo videoInfo, bool avPro)
     {
         var url = videoInfo.VideoUrl;
-        // if url contains "results?" then it's a search
         if (url.Contains("results?"))
         {
             Log.Error("URL is a search query, cannot get video URL.");
@@ -200,17 +207,15 @@ public class VideoId
             }
         };
 
-        // yt-dlp -f best/bestvideo[height<=?720]+bestaudio --no-playlist --no-warnings --get-url https://youtu.be/GoSo8YOKSAE
         var additionalArgs = ConfigManager.Config.ytdlAdditionalArgs;
         var cookieArg = string.Empty;
         if (Program.IsCookiesEnabledAndValid() && videoInfo.UrlType == UrlType.YouTube)
             cookieArg = "--cookies youtube_cookies.txt";
-        
+
         var languageArg = string.IsNullOrEmpty(ConfigManager.Config.ytdlDubLanguage)
             ? string.Empty
             : $"[language={ConfigManager.Config.ytdlDubLanguage}]/(mp4/best)[height<=?1080][height>=?64][width>=?64]";
-        
-        // TODO: safety check for escaping strings
+
         if (avPro)
         {
             process.StartInfo.Arguments = $"--encoding utf-8 -f (mp4/best)[height<=?1080][height>=?64][width>=?64]{languageArg} --impersonate=\"safari\" --extractor-args=\"youtube:player_client=web\" --no-playlist --no-warnings {cookieArg} {additionalArgs} --get-url {url}";
@@ -219,22 +224,22 @@ public class VideoId
         {
             process.StartInfo.Arguments = $"--encoding utf-8 -f (mp4/best)[vcodec!=av01][vcodec!=vp9.2][height<=?1080][height>=?64][width>=?64][protocol^=http] --no-playlist --no-warnings {cookieArg} {additionalArgs} --get-url {url}";
         }
-        
+
         process.Start();
         var output = await process.StandardOutput.ReadToEndAsync();
         output = output.Trim();
         var error = await process.StandardError.ReadToEndAsync();
         error = error.Trim();
         await process.WaitForExitAsync();
-        
+
         Log.Information("Started yt-dlp with args: {args}", process.StartInfo.Arguments);
-        
+
         if (process.ExitCode != 0)
         {
             Log.Error("Get URL: {error}", error);
             if (error.Contains("Sign in to confirm you’re not a bot"))
                 Log.Error("Fix this error by following these instructions: https://github.com/clienthax/VRCVideoCacherBrowserExtension");
-            
+
             return string.Empty;
         }
 

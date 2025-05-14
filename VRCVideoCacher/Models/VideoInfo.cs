@@ -6,13 +6,18 @@ public enum UrlType
     YouTube,
     PyPyDance,
     VRDancing,
+    SoundCloud,
     Other
 }
 
 public enum DownloadFormat
 {
     MP4,
-    Webm
+    Webm,
+    opus,
+    ogg,
+    m4a,
+    mp3
 }
 
 public class VideoInfo

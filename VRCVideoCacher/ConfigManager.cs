@@ -42,7 +42,7 @@ public class ConfigManager
         File.WriteAllText(ConfigFileName, JsonConvert.SerializeObject(Config, Formatting.Indented));
         Log.Information("Config saved.");
     }
-    
+
     private static bool GetUserConfirmation(string prompt, bool defaultValue)
     {
         var defaultOption = defaultValue ? "Y/n" : "y/N";
@@ -67,6 +67,8 @@ public class ConfigManager
         var vrDancingPyPyChoice = GetUserConfirmation("Would you like to cache/download VRDancing & PyPyDance videos?", true);
         Config.CacheVRDancing = vrDancingPyPyChoice;
         Config.CachePyPyDance = vrDancingPyPyChoice;
+
+        Config.CacheSoundCloud = GetUserConfirmation("Would you like to cache/download SoundCloud audio?", true);
 
         Log.Information("Would you like to use the companion extension to fetch youtube cookies? (This will fix bot errors, requires installation of the extension)");
         Log.Information("Extension can be found here: https://github.com/clienthax/VRCVideoCacherBrowserExtension");
@@ -95,6 +97,7 @@ public class ConfigModel
     public float CacheMaxSizeInGb = 0;
     public bool CachePyPyDance = true;
     public bool CacheVRDancing = true;
+    public bool CacheSoundCloud = true;
 
     public bool AutoUpdate = true;
     public string[] PreCacheUrls = [];
