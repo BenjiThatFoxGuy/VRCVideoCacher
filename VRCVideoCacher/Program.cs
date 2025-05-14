@@ -11,7 +11,7 @@ namespace VRCVideoCacher;
 internal static class Program
 {
     public static string YtdlpHash = string.Empty;
-    public const string Version = "2025.5.12";
+    public const string Version = "2025.5.14";
     public static readonly string CurrentProcessPath = Path.GetDirectoryName(Environment.ProcessPath) ?? string.Empty;
     public static readonly ILogger Logger = Log.ForContext("SourceContext", "Core");
     
@@ -27,7 +27,8 @@ internal static class Program
         const string elly = "Elly";
         const string natsumi = "Natsumi";
         const string haxy = "Haxy";
-        Logger.Information("VRCVideoCacher version {Version} created by {Elly}, {Natsumi}, {Haxy}", Version, elly, natsumi, haxy);
+        const string benji = "Fork with additional features and improvements by BenjiThatFoxGuy";
+        Logger.Information("VRCVideoCacher version {Version} created by {Elly}, {Natsumi}, {Haxy}, {BenjiThatFoxGuy}", Version, elly, natsumi, haxy, benji);
 
         await Updater.CheckForUpdates();
         Updater.Cleanup();
