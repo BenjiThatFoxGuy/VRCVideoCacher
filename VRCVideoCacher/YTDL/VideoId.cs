@@ -19,7 +19,10 @@ public class VideoId
     private static readonly string[] YouTubeHosts = ["youtube.com", "youtu.be", "www.youtube.com"];
     private static readonly Regex YoutubeRegex = new(@"(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|live\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})");
     private static readonly Regex SoundCloudRegex = new(@"^https?:\/\/(soundcloud\.com|snd\.sc)\/[\w\-]+\/[\w\-]+", RegexOptions.Compiled);
-    private static readonly Regex PornhubRegex = new(@"^https?:\/\/(www\.)?(pornhub\.com\/view_video\.php\?viewkey=[\w\-]+|phub\.to\/video\/[\w\-]+)", RegexOptions.Compiled);
+    private static readonly Regex PornhubRegex = new(
+    @"^https?:\/\/(?:(?:www\.)?pornhub\.com\/view_video\.php\?viewkey=[\w\-]+|phub\.to\/video\/[\w\-]+|[a-z\-]+\.phncdn\.com\/(?:hls|videos|dash)\/.+?\.(?:m3u8|mp4)(?:\?.*)?)",
+    RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
 
 
     private static bool IsYouTubeUrl(string url)
