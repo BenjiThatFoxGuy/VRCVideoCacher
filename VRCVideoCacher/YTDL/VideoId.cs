@@ -15,8 +15,12 @@ public class VideoId
     {
         DefaultRequestHeaders = { { "User-Agent", "VRCVideoCacher" } }
     };
+
     private static readonly string[] YouTubeHosts = ["youtube.com", "youtu.be", "www.youtube.com"];
     private static readonly Regex YoutubeRegex = new(@"(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|live\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})");
+    private static readonly Regex SoundCloudRegex = new(@"^https?:\/\/(soundcloud\.com|snd\.sc)\/[\w\-]+\/[\w\-]+", RegexOptions.Compiled);
+    private static readonly Regex PornhubRegex = new(@"^https?:\/\/(www\.)?(pornhub\.com\/view_video\.php\?viewkey=[\w\-]+|phub\.to\/video\/[\w\-]+)", RegexOptions.Compiled);
+
 
     private static bool IsYouTubeUrl(string url)
     {
@@ -30,6 +34,17 @@ public class VideoId
             return false;
         }
     }
+
+    private static bool IsSoundCloudUrl(string url)
+    {
+        return SoundCloudRegex.IsMatch(url);
+    }
+
+    private static bool IsPornHubUrl(string url)
+    {
+        return PornhubRegex.IsMatch(url);
+    }
+
 
     private static string HashUrl(string url)
     {
@@ -131,6 +146,30 @@ public class VideoId
                 VideoId = videoId,
                 UrlType = UrlType.YouTube,
                 DownloadFormat = avPro ? DownloadFormat.Webm : DownloadFormat.MP4,
+            };
+        }
+
+        if (IsSoundCloudUrl(url))
+        {
+            var videoId = HashUrl(url);
+            return new VideoInfo
+            {
+                VideoUrl = url,
+                VideoId = videoId,
+                UrlType = UrlType.SoundCloud,
+                DownloadFormat = DownloadFormat.MP4
+            };
+        }
+
+        if (IsPornHubUrl(url))
+        {
+            var videoId = HashUrl(url);
+            return new VideoInfo
+            {
+                VideoUrl = url,
+                VideoId = videoId,
+                UrlType = UrlType.PornHub,
+                DownloadFormat = DownloadFormat.MP4
             };
         }
 

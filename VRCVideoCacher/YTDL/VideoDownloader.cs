@@ -59,6 +59,10 @@ public class VideoDownloader
                     if (ConfigManager.Config.CacheSoundCloud)
                         DownloadVideoWithId(queueItem).Wait();
                     break;
+                case UrlType.PornHub:
+                    if (ConfigManager.Config.CachePornHub)
+                        DownloadVideoWithId(queueItem).Wait();
+                    break;
                 case UrlType.Other:
                     break;
                 default:

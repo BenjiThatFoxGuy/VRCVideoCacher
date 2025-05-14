@@ -7,6 +7,7 @@ public enum UrlType
     PyPyDance,
     VRDancing,
     SoundCloud,
+    PornHub,
     Other
 }
 

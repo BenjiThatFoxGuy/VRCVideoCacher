@@ -99,6 +99,8 @@ public class ConfigModel
     public bool CacheVRDancing = true;
     public bool CacheSoundCloud = true;
 
+    public bool CachePornHub = true;
+
     public bool AutoUpdate = true;
     public string[] PreCacheUrls = [];
 }
