@@ -1,0 +1,39 @@
+name: .NET Build Artifact
+
+on:
+  push:  # Trigger on any push to any branch
+    branches:
+      - '**'
+
+permissions:
+  contents: read  # Read-only access is sufficient for this workflow
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Publish VRCVideoCacher as self-contained EXE
+        run: >
+          dotnet publish VRCVideoCacher/VRCVideoCacher.csproj
+          --configuration Release
+          --runtime win-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:PublishTrimmed=false
+          -o publish_output
+
+      - name: Upload EXE as Artifact (expires in 1 day)
+        uses: actions/upload-artifact@v4
+        with:
+          name: VRCVideoCacher-exe
+          path: publish_output/VRCVideoCacher.exe
+          retention-days: 1
