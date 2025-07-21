@@ -1,0 +1,22 @@
+{
+  "ytdlWebServerURL": "http://localhost:9696",
+  "ytdlPath": "Utils/yt-dlp.exe",
+  "ytdlUseCookies": false,
+  "ytdlAdditionalArgs": "",
+  "ytdlArgsOverride": "",
+  "ytdlDubLanguage": "",
+  "ytdlDelay": 0,
+  "avproOverride": "default",
+  "CachedAssetPath": "CachedAssets",
+  "BlockedUrls": [
+    "https://na2.vrdancing.club/sampleurl.mp4"
+  ],
+  "CacheYouTube": false,
+  "CacheYouTubeMaxResolution": 2160,
+  "CacheYouTubeMaxLength": 120,
+  "CacheMaxSizeInGb": 0.0,
+  "CachePyPyDance": false,
+  "CacheVRDancing": false,
+  "AutoUpdate": true,
+  "PreCacheUrls": []
+}

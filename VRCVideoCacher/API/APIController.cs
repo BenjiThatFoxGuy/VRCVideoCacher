@@ -41,6 +41,22 @@ public class ApiController : WebApiController
         // escape double quotes for our own safety
         var requestUrl = Request.QueryString["url"]?.Replace("\"", "%22").Trim();
         var avPro = string.Compare(Request.QueryString["avpro"], "true", StringComparison.OrdinalIgnoreCase) == 0;
+        
+        // Apply AVPro override from config
+        switch (ConfigManager.Config.avproOverride.ToLower())
+        {
+            case "true":
+                avPro = true;
+                break;
+            case "false":
+                avPro = false;
+                break;
+            case "default":
+            default:
+                // Keep the original logic (use query parameter)
+                break;
+        }
+        
         if (string.IsNullOrEmpty(requestUrl))
         {
             Log.Error("No URL provided.");
