@@ -111,6 +111,12 @@ public class VideoDownloader
             ? "+ba[ext=m4a]"
             : $"+(ba[ext=m4a][language={ConfigManager.Config.ytdlDubLanguage}]/ba[ext=m4a])";
 
+        // Check if additional args override certain default arguments
+        var hasFormatOverride = !string.IsNullOrEmpty(additionalArgs) && 
+            (additionalArgs.Contains("-f ") || additionalArgs.Contains("--format"));
+        var hasPlaylistOverride = !string.IsNullOrEmpty(additionalArgs) && 
+            (additionalArgs.Contains("--playlist-items") || additionalArgs.Contains("--yes-playlist"));
+
         var process = new Process
         {
             StartInfo =
@@ -127,14 +133,53 @@ public class VideoDownloader
         
         if (videoInfo.DownloadFormat == DownloadFormat.Webm)
         {
-            // process.StartInfo.Arguments = $"--encoding utf-8 -q -o {TempDownloadMp4Path} -f \"bv*[height<={ConfigManager.Config.CacheYouTubeMaxResolution}][vcodec~='^(avc|h264)']+ba[ext=m4a]/bv*[height<={ConfigManager.Config.CacheYouTubeMaxResolution}][vcodec!=av01][vcodec!=vp9.2][protocol^=http]\" --no-playlist --remux-video mp4 --no-progress {cookieArg} {additionalArgs} -- \"{videoId}\"";
-            process.StartInfo.Arguments = $"--encoding utf-8 -q -o {TempDownloadWebmPath} -f \"bv*[height<={ConfigManager.Config.CacheYouTubeMaxResolution}][vcodec~='^av01'][ext=mp4][dynamic_range='SDR']{audioArg}/bv*[height<={ConfigManager.Config.CacheYouTubeMaxResolution}][vcodec~='vp9'][ext=webm][dynamic_range='SDR']{audioArg}\" --no-mtime --no-playlist --no-progress {cookieArg} {additionalArgs} -- \"{videoId}\"";
+            // Build base arguments
+            var baseArgs = $"--encoding utf-8 -q -o {TempDownloadWebmPath}";
+            
+            // Add format only if not overridden by additional args
+            if (!hasFormatOverride)
+                baseArgs += $" -f \"bv*[height<={ConfigManager.Config.CacheYouTubeMaxResolution}][vcodec~='^av01'][ext=mp4][dynamic_range='SDR']{audioArg}/bv*[height<={ConfigManager.Config.CacheYouTubeMaxResolution}][vcodec~='vp9'][ext=webm][dynamic_range='SDR']{audioArg}\"";
+                
+            // Add other default arguments
+            baseArgs += " --no-mtime";
+            if (!hasPlaylistOverride)
+                baseArgs += " --no-playlist";
+            baseArgs += " --no-progress";
+            
+            // Add cookie argument
+            if (!string.IsNullOrEmpty(cookieArg))
+                baseArgs += $" {cookieArg}";
+                
+            // Add additional arguments (these will override any defaults)
+            if (!string.IsNullOrEmpty(additionalArgs))
+                baseArgs += $" {additionalArgs}";
+                
+            process.StartInfo.Arguments = $"{baseArgs} -- \"{videoId}\"";
         }
         else
         {
-            // Potato mode.
-            process.StartInfo.Arguments = $"--encoding utf-8 -q -o {TempDownloadMp4Path} -f \"bv*[height<=1080][vcodec~='^(avc|h264)']{audioArgPotato}/bv*[height<=1080][vcodec~='^av01'][dynamic_range='SDR']\" --no-mtime --no-playlist --remux-video mp4 --no-progress {cookieArg} {additionalArgs} -- \"{videoId}\"";
-            // $@"-f best/bestvideo[height<=?720]+bestaudio --no-playlist --no-warnings {url} " %(id)s.%(ext)s
+            // Potato mode - build base arguments
+            var baseArgs = $"--encoding utf-8 -q -o {TempDownloadMp4Path}";
+            
+            // Add format only if not overridden by additional args
+            if (!hasFormatOverride)
+                baseArgs += $" -f \"bv*[height<=1080][vcodec~='^(avc|h264)']{audioArgPotato}/bv*[height<=1080][vcodec~='^av01'][dynamic_range='SDR']\"";
+                
+            // Add other default arguments
+            baseArgs += " --no-mtime";
+            if (!hasPlaylistOverride)
+                baseArgs += " --no-playlist";
+            baseArgs += " --remux-video mp4 --no-progress";
+            
+            // Add cookie argument
+            if (!string.IsNullOrEmpty(cookieArg))
+                baseArgs += $" {cookieArg}";
+                
+            // Add additional arguments (these will override any defaults)
+            if (!string.IsNullOrEmpty(additionalArgs))
+                baseArgs += $" {additionalArgs}";
+                
+            process.StartInfo.Arguments = $"{baseArgs} -- \"{videoId}\"";
         }
 
         process.Start();
