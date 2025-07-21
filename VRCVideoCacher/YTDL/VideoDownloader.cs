@@ -185,7 +185,7 @@ public class VideoDownloader
         }
 
         CacheManager.AddToCache(fileName);
-        Log.Information("YouTube Video Downloaded: {URL}", $"{ConfigManager.Config.ytdlWebServerURL}{fileName}");
+        Log.Information("YouTube Video Downloaded: {URL}", $"{ConfigManager.Config.ytdlWebServerURL}/{fileName}");
     }
     
     private static async Task DownloadVideoWithId(VideoInfo videoInfo)
@@ -231,6 +231,6 @@ public class VideoDownloader
             Log.Error("Failed to download Video: {URL}", url);
             return;
         }
-        Log.Information("Video Downloaded: {URL}", $"{ConfigManager.Config.ytdlWebServerURL}{fileName}");
+        Log.Information("Video Downloaded: {URL}", $"{ConfigManager.Config.ytdlWebServerURL}/{fileName}");
     }
 }
