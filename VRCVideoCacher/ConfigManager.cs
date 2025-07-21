@@ -42,6 +42,16 @@ public class ConfigManager
         Log.Information("Config saved.");
     }
     
+    public static string GetYtdlArgs()
+    {
+        // If override is set and not empty, use it instead of additional args
+        if (!string.IsNullOrEmpty(Config.ytdlArgsOverride))
+            return Config.ytdlArgsOverride;
+        
+        // Otherwise use additional args (original behavior)
+        return Config.ytdlAdditionalArgs;
+    }
+
     private static bool GetUserConfirmation(string prompt, bool defaultValue)
     {
         var defaultOption = defaultValue ? "Y/n" : "y/N";
@@ -85,8 +95,10 @@ public class ConfigModel
     public string ytdlPath = "Utils/yt-dlp.exe";
     public bool ytdlUseCookies = true;
     public string ytdlAdditionalArgs = string.Empty;
+    public string ytdlArgsOverride = string.Empty;
     public string ytdlDubLanguage = string.Empty;
     public int ytdlDelay = 0;
+    public string avproOverride = "default";
     public string CachedAssetPath = "CachedAssets";
     public string[] BlockedUrls = new[] { "https://na2.vrdancing.club/sampleurl.mp4" };
     public bool CacheYouTube = true;

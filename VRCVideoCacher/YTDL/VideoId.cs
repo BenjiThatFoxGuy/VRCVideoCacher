@@ -132,7 +132,7 @@ public class VideoId
 
     public static async Task<string> TryGetYouTubeVideoId(string url)
     {
-        var additionalArgs = ConfigManager.Config.ytdlAdditionalArgs;
+        var additionalArgs = ConfigManager.GetYtdlArgs();
         var cookieArg = string.Empty;
         if (Program.IsCookiesEnabledAndValid())
             cookieArg = "--cookies youtube_cookies.txt";
@@ -201,7 +201,7 @@ public class VideoId
 
         // yt-dlp -f best/bestvideo[height<=?720]+bestaudio --no-playlist --no-warnings --get-url https://youtu.be/GoSo8YOKSAE
         var url = videoInfo.VideoUrl;
-        var additionalArgs = ConfigManager.Config.ytdlAdditionalArgs;
+        var additionalArgs = ConfigManager.GetYtdlArgs();
         var cookieArg = string.Empty;
         if (Program.IsCookiesEnabledAndValid() && videoInfo.UrlType == UrlType.YouTube)
             cookieArg = "--cookies youtube_cookies.txt";
