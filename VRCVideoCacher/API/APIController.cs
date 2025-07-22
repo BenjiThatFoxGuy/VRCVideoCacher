@@ -40,9 +40,11 @@ public class ApiController : WebApiController
     {
         // escape double quotes for our own safety
         var requestUrl = Request.QueryString["url"]?.Replace("\"", "%22").Trim();
-        var avPro = string.Compare(Request.QueryString["avpro"], "true", StringComparison.OrdinalIgnoreCase) == 0;
+        var originalAvPro = string.Compare(Request.QueryString["avpro"], "true", StringComparison.OrdinalIgnoreCase) == 0;
+        var avPro = originalAvPro;
         
         // Apply AVPro override from config
+        var wasOverriddenToFalse = false;
         switch (ConfigManager.Config.avproOverride.ToLower())
         {
             case "true":
@@ -50,6 +52,7 @@ public class ApiController : WebApiController
                 break;
             case "false":
                 avPro = false;
+                wasOverriddenToFalse = true;
                 break;
             case "default":
             default:
@@ -111,6 +114,27 @@ public class ApiController : WebApiController
         if (!success)
         {
             Log.Error("Get URL: {error}", response);
+            
+            // If this was a YouTube video that failed with avpro=false due to config override,
+            // retry with the original avpro value (act as if config is set to default)
+            if (videoInfo.UrlType == UrlType.YouTube && wasOverriddenToFalse && !avPro)
+            {
+                Log.Information("Retrying YouTube video with original avpro setting due to failure with avpro=false override");
+                var (retryResponse, retrySuccess) = await VideoId.GetUrl(videoInfo, originalAvPro);
+                if (retrySuccess)
+                {
+                    Log.Information("Retry successful, responding with URL: {URL}", retryResponse);
+                    await HttpContext.SendStringAsync(retryResponse, "text/plain", Encoding.UTF8);
+                    // check if file is cached again to handle race condition
+                    var (isCachedRetry, _, _) = GetCachedFile(videoInfo.VideoId, originalAvPro);
+                    if (!isCachedRetry)
+                        VideoDownloader.QueueDownload(videoInfo);
+                    return;
+                }
+                Log.Error("Retry also failed: {error}", retryResponse);
+                response = retryResponse; // Use the retry error message
+            }
+            
             // only send the error back if it's for YouTube, otherwise let it play the request URL normally
             if (videoInfo.UrlType == UrlType.YouTube)
             {
