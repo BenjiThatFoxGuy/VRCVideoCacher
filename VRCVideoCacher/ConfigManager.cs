@@ -96,17 +96,17 @@ public class ConfigModel
     public bool ytdlUseCookies = true;
     public string ytdlAdditionalArgs = string.Empty;
     public string ytdlArgsOverride = string.Empty;
-    public string ytdlDubLanguage = string.Empty;
+    public string ytdlDubLanguage = "en";
     public int ytdlDelay = 0;
-    public string avproOverride = "default";
+    public string avproOverride = "false";
     public string CachedAssetPath = "CachedAssets";
     public string[] BlockedUrls = new[] { "https://na2.vrdancing.club/sampleurl.mp4" };
     public bool CacheYouTube = true;
-    public int CacheYouTubeMaxResolution = 2160;
-    public int CacheYouTubeMaxLength = 120;
-    public float CacheMaxSizeInGb = 0;
-    public bool CachePyPyDance = true;
-    public bool CacheVRDancing = true;
+    public int CacheYouTubeMaxResolution = 1080;
+    public int CacheYouTubeMaxLength = 180;
+    public float CacheMaxSizeInGb = 32;
+    public bool CachePyPyDance = false;
+    public bool CacheVRDancing = false;
 
     public bool AutoUpdate = true;
     public string[] PreCacheUrls = [];
