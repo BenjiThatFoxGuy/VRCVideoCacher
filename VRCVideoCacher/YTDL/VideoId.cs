@@ -15,7 +15,7 @@ public class VideoId
     {
         DefaultRequestHeaders = { { "User-Agent", "VRCVideoCacher" } }
     };
-    private static readonly string[] YouTubeHosts = ["youtube.com", "youtu.be", "www.youtube.com"];
+    private static readonly string[] YouTubeHosts = ["youtube.com", "youtu.be", "www.youtube.com", "m.youtube.com", "music.youtube.com"];
     private static readonly Regex YoutubeRegex = new(@"(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|live\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})");
 
     private static bool IsYouTubeUrl(string url)
@@ -135,13 +135,13 @@ public class VideoId
         var additionalArgs = ConfigManager.GetYtdlArgs();
         var cookieArg = string.Empty;
         if (Program.IsCookiesEnabledAndValid())
-            cookieArg = "--cookies youtube_cookies.txt";
+            cookieArg = $"--cookies \"{YtdlManager.CookiesPath}\"";
 
         var process = new Process
         {
             StartInfo =
             {
-                FileName = ConfigManager.Config.ytdlPath,
+                FileName = YtdlManager.YtdlPath,
                 Arguments = $"--encoding utf-8 --no-playlist --no-warnings {additionalArgs} {cookieArg} -j \"{url}\"",
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
@@ -189,7 +189,7 @@ public class VideoId
         {
             StartInfo =
             {
-                FileName = ConfigManager.Config.ytdlPath,
+                FileName = YtdlManager.YtdlPath,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
@@ -203,8 +203,8 @@ public class VideoId
         var url = videoInfo.VideoUrl;
         var additionalArgs = ConfigManager.GetYtdlArgs();
         var cookieArg = string.Empty;
-        if (Program.IsCookiesEnabledAndValid() && videoInfo.UrlType == UrlType.YouTube)
-            cookieArg = "--cookies youtube_cookies.txt";
+        if (Program.IsCookiesEnabledAndValid())
+            cookieArg = $"--cookies \"{YtdlManager.CookiesPath}\"";
         
         var languageArg = string.IsNullOrEmpty(ConfigManager.Config.ytdlDubLanguage)
             ? string.Empty

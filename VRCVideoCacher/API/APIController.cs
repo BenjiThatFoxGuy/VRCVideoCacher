@@ -24,8 +24,7 @@ public class ApiController : WebApiController
             return;
         }
         
-        var path = Path.Combine(Program.CurrentProcessPath, "youtube_cookies.txt");
-        await File.WriteAllTextAsync(path, cookies);
+        await File.WriteAllTextAsync(YtdlManager.CookiesPath, cookies);
 
         HttpContext.Response.StatusCode = 200;
         await HttpContext.SendStringAsync("Cookies received.", "text/plain", Encoding.UTF8);
@@ -67,6 +66,13 @@ public class ApiController : WebApiController
             return;
         }
         Log.Information("Request URL: {URL}", requestUrl);
+
+        if (requestUrl.StartsWith("https://dmn.moe"))
+        {
+            requestUrl = requestUrl.Replace("/sr/", "/yt/");
+            Log.Information("YTS URL detected, modified to: {URL}", requestUrl);
+        }
+        
         var videoInfo = await VideoId.GetVideoId(requestUrl, avPro);
         if (videoInfo == null)
         {
@@ -157,13 +163,13 @@ public class ApiController : WebApiController
     {
         var ext = avPro ? "webm" : "mp4";
         var fileName = $"{videoId}.{ext}";
-        var filePath = Path.Combine(ConfigManager.Config.CachedAssetPath, fileName);
+        var filePath = Path.Combine(CacheManager.CachePath, fileName);
         var isCached = File.Exists(filePath);
         if (avPro && !isCached)
         {
             // retry with .mp4
             fileName = $"{videoId}.mp4";
-            filePath = Path.Combine(ConfigManager.Config.CachedAssetPath, fileName);
+            filePath = Path.Combine(CacheManager.CachePath, fileName);
             isCached = File.Exists(filePath);
         }
         return (isCached, filePath, fileName);

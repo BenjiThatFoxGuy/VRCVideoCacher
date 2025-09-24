@@ -1,5 +1,7 @@
 using Newtonsoft.Json;
 using Serilog;
+using VRCVideoCacher.YTDL;
+
 // ReSharper disable FieldCanBeMadeReadOnly.Global
 
 namespace VRCVideoCacher;
@@ -8,19 +10,26 @@ public class ConfigManager
 {
     public static readonly ConfigModel Config;
     private static readonly ILogger Log = Program.Logger.ForContext<ConfigManager>();
-    private const string ConfigFileName = "Config.json";
+    private static readonly string configFilePath;
 
     static ConfigManager()
     {
         Log.Information("Loading config...");
-        if (!File.Exists(ConfigFileName))
+        if (OperatingSystem.IsWindows())
+            configFilePath = Path.Combine(Program.CurrentProcessPath, "Config.json");
+        else
+            configFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "VRCVideoCacher/Config.json");
+        Log.Debug("Using config file path: {ConfigFilePath}", configFilePath);
+
+        Directory.CreateDirectory(Path.GetDirectoryName(configFilePath) ?? throw new Exception("Failed to get config folder path"));
+        if (!File.Exists(configFilePath))
         {
             Config = new ConfigModel();
             FirstRun();
         }
         else
         {
-            var configFilePath = Path.Combine(Program.CurrentProcessPath, ConfigFileName);
             Config = JsonConvert.DeserializeObject<ConfigModel>(File.ReadAllText(configFilePath)) ?? new ConfigModel();
         }
         if (Config.ytdlWebServerURL.EndsWith('/'))
@@ -33,12 +42,12 @@ public class ConfigManager
     private static void TrySaveConfig()
     {
         var newConfig = JsonConvert.SerializeObject(Config, Formatting.Indented);
-        var oldConfig = File.Exists(ConfigFileName) ? File.ReadAllText(ConfigFileName) : string.Empty;
+        var oldConfig = File.Exists(configFilePath) ? File.ReadAllText(configFilePath) : string.Empty;
         if (newConfig == oldConfig)
             return;
         
         Log.Information("Config changed, saving...");
-        File.WriteAllText(ConfigFileName, JsonConvert.SerializeObject(Config, Formatting.Indented));
+        File.WriteAllText(configFilePath, JsonConvert.SerializeObject(Config, Formatting.Indented));
         Log.Information("Config saved.");
     }
     
@@ -64,7 +73,7 @@ public class ConfigManager
 
     private static void FirstRun()
     {
-        Log.Information("It appears this is your first time running VRCVideoCacher. Lets create a basic config file.");
+        Log.Information("It appears this is your first time running VRCVideoCacher. Let's create a basic config file.");
 
         Config.CacheYouTube = GetUserConfirmation("Would you like to cache/download Youtube videos?", true);
         if (Config.CacheYouTube)
@@ -81,9 +90,14 @@ public class ConfigManager
         Log.Information("Extension can be found here: https://github.com/clienthax/VRCVideoCacherBrowserExtension");
         Config.ytdlUseCookies = GetUserConfirmation("", true);
 
-        if (GetUserConfirmation("Would you like to add VRCVideoCacher to VRCX auto start?", true))
+        if (OperatingSystem.IsWindows() && GetUserConfirmation("Would you like to add VRCVideoCacher to VRCX auto start?", true))
         {
             AutoStartShortcut.CreateShortcut();
+        }
+
+        if (YtdlManager.GlobalYtdlConfigExists() && GetUserConfirmation(@"Would you like to delete global YT-DLP config in %AppData%\yt-dlp\config?", true))
+        {
+            YtdlManager.DeleteGlobalYtdlConfig();
         }
     }
 }
@@ -92,8 +106,9 @@ public class ConfigManager
 public class ConfigModel
 {
     public string ytdlWebServerURL = "http://localhost:9696";
-    public string ytdlPath = "Utils/yt-dlp.exe";
+    public string ytdlPath = OperatingSystem.IsWindows() ? "Utils\\yt-dlp.exe" : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VRCVideoCacher/Utils/yt-dlp");
     public bool ytdlUseCookies = true;
+    public bool ytdlAutoUpdate = true;
     public string ytdlAdditionalArgs = string.Empty;
     public string ytdlArgsOverride = string.Empty;
     public string ytdlDubLanguage = "en";

@@ -14,5 +14,10 @@
         <Company>yt-dlp-stub</Company>
         <Product>yt-dlp-stub</Product>
     </PropertyGroup>
+    
+    <PropertyGroup Condition="$([System.OperatingSystem]::IsLinux())">
+        <PublishAot>false</PublishAot>
+        <PublishSingleFile>true</PublishSingleFile>
+    </PropertyGroup>
 
 </Project>

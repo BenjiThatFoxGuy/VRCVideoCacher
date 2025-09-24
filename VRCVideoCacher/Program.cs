@@ -11,10 +11,10 @@ namespace VRCVideoCacher;
 internal static class Program
 {
     public static string YtdlpHash = string.Empty;
-    public const string Version = "2025.5.21";
+    public const string Version = "2025.9.24";
     public static readonly string CurrentProcessPath = Path.GetDirectoryName(Environment.ProcessPath) ?? string.Empty;
     public static readonly ILogger Logger = Log.ForContext("SourceContext", "Core");
-    
+
     public static async Task Main(string[] args)
     {
         Console.Title = $"VRCVideoCacher v{Version}";
@@ -41,22 +41,34 @@ internal static class Program
             Console.WriteLine(GetOurYtdlpHash());
             Environment.Exit(0);
         }
-        Console.CancelKeyPress += (_, _) => ConsoleOnCancelKeyPress();
+        Console.CancelKeyPress += (_, _) => Environment.Exit(0);
         AppDomain.CurrentDomain.ProcessExit += (_, _) => OnAppQuit();
-        
+
         YtdlpHash = GetOurYtdlpHash();
-        await YtdlManager.TryDownloadYtdlp();
+
+        if (ConfigManager.Config.ytdlAutoUpdate && !string.IsNullOrEmpty(ConfigManager.Config.ytdlPath))
+        {
+            await YtdlManager.TryDownloadYtdlp();
+            YtdlManager.StartYtdlDownloadThread();
+            _ = YtdlManager.TryDownloadFfmpeg();
+        }
+
         AutoStartShortcut.TryUpdateShortcutPath();
         WebServer.Init();
         FileTools.BackupAndReplaceYtdl();
         await BulkPreCache.DownloadFileList();
-        _ = YtdlManager.TryDownloadFfmpeg();
 
         if (ConfigManager.Config.ytdlUseCookies && !IsCookiesEnabledAndValid())
             Logger.Warning("No cookies found, please use the browser extension to send cookies or disable \"ytdlUseCookies\" in config.");
 
         CacheManager.Init();
-        await WinGet.TryInstallPackages();
+
+        // run after init to avoid text spam blocking user input
+        if (OperatingSystem.IsWindows())
+            _ = WinGet.TryInstallPackages();
+
+        if (YtdlManager.GlobalYtdlConfigExists())
+            Logger.Error("Global yt-dlp config file found in \"%AppData%\\yt-dlp\". Please delete it to avoid conflicts with VRCVideoCacher.");
         
         await Task.Delay(-1);
     }
@@ -65,12 +77,11 @@ internal static class Program
     {
         if (!ConfigManager.Config.ytdlUseCookies)
             return false;
-        
-        var cookiesPath = Path.Combine(CurrentProcessPath, "youtube_cookies.txt");
-        if (!File.Exists(cookiesPath))
+
+        if (!File.Exists(YtdlManager.CookiesPath))
             return false;
         
-        var cookies = File.ReadAllText(cookiesPath);
+        var cookies = File.ReadAllText(YtdlManager.CookiesPath);
         return IsCookiesValid(cookies);
     }
 
@@ -81,7 +92,7 @@ internal static class Program
 
         if (cookies.Contains("youtube.com") && cookies.Contains("LOGIN_INFO"))
             return true;
-        
+
         return false;
     }
 
@@ -112,14 +123,6 @@ internal static class Program
     public static string ComputeBinaryContentHash(byte[] base64)
     {
         return Convert.ToBase64String(SHA256.HashData(base64));
-    }
-
-    private static void ConsoleOnCancelKeyPress()
-    {
-        OnAppQuit();
-        Logger.Information("Press any key to continue...");
-        Console.ReadKey();
-        Environment.Exit(0);
     }
 
     private static void OnAppQuit()
