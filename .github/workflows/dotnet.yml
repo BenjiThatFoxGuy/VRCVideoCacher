@@ -8,6 +8,11 @@ on:
 permissions:
   contents: write  # Required to create releases and upload assets
 
+# Allow one concurrent deployment
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: windows-latest
@@ -15,10 +20,34 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.nuget/packages
+            ${{ github.workspace }}/**/obj
+            ${{ github.workspace }}/**/bin
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.sln', '**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Cache .NET tools
+        id: cache-dotnet-tools
+        uses: actions/cache@v4
+        with:
+          path: ~/.dotnet/tools
+          key: ${{ runner.os }}-dotnet-tools-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-dotnet-tools-
+
       - name: Setup .NET
+        if: steps.cache-dotnet-tools.outputs.cache-hit != 'true'
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 9.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore VRCVideoCacher.sln --verbosity minimal
 
       - name: Publish VRCVideoCacher as self-contained EXE
         run: >
